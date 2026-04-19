@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -10,8 +11,10 @@ import SignupScreen from './screens/SignupScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
 import AdminBooksScreen from './screens/AdminBooksScreen';
 import CustomerBooksScreen from './screens/CustomerBooksScreen';
+import CartScreen from './screens/CartScreen';
 import { Colors } from './constants/styles';
 import AuthContextProvider, { AuthContext } from './store/auth-context';
+import CartProvider from './store/cart-context';
 import IconButton from './components/ui/IconButton';
 
 const Stack = createNativeStackNavigator();
@@ -66,7 +69,41 @@ function AuthenticatedStack() {
       <Stack.Screen
         name="CustomerBooks"
         component={CustomerBooksScreen}
-        options={{ title: 'Books' }}
+        options={({ navigation }) => ({
+          title: 'Books',
+          headerRight: ({ tintColor }) => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <IconButton
+                icon="cart-outline"
+                color={tintColor}
+                size={24}
+                onPress={() => navigation.navigate('Cart')}
+              />
+              <IconButton
+                icon="exit"
+                color={tintColor}
+                size={24}
+                onPress={authCtx.logout}
+              />
+            </View>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="Cart"
+        component={CartScreen}
+        options={({ navigation }) => ({
+          title: 'Cart',
+          headerLeft: ({ tintColor }) =>
+            navigation.canGoBack() ? (
+              <IconButton
+                icon="arrow-back"
+                color={tintColor}
+                size={24}
+                onPress={() => navigation.goBack()}
+              />
+            ) : null,
+        })}
       />
     </Stack.Navigator>
   );
@@ -78,7 +115,11 @@ function Navigation() {
   return (
     <NavigationContainer>
       {!authCtx.isAuthenticated && <AuthStack />}
-      {authCtx.isAuthenticated && <AuthenticatedStack />}
+      {authCtx.isAuthenticated && (
+        <CartProvider>
+          <AuthenticatedStack />
+        </CartProvider>
+      )}
     </NavigationContainer>
   );
 }

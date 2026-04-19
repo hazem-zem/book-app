@@ -6,6 +6,8 @@ function authHeaders(token) {
   return {
     Authorization: `Bearer ${token}`,
     Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   };
 }
 

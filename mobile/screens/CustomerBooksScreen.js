@@ -1,24 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import Button from '../components/ui/Button';
 import LoadingOverlay from '../components/ui/LoadingOverlay';
 import { Colors } from '../constants/styles';
+import { CartContext } from '../store/cart-context';
 import { fetchBooks } from '../util/books';
 
 function CustomerBooksScreen() {
+  const { addToCart } = useContext(CartContext);
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
-  const [cartItems, setCartItems] = useState({});
-
-  const cartCount = useMemo(
-    () => Object.values(cartItems).reduce((sum, quantity) => sum + quantity, 0),
-    [cartItems]
-  );
 
   const loadBooks = useCallback(async () => {
     setIsLoading(true);
@@ -42,16 +38,11 @@ function CustomerBooksScreen() {
     setActiveSearch(search.trim());
   }
 
-  function addToCart(bookId) {
-    setCartItems((current) => ({
-      ...current,
-      [bookId]: (current[bookId] ?? 0) + 1,
-    }));
+  function handleAddToCart(book) {
+    addToCart(book);
   }
 
   function renderBookItem({ item }) {
-    const quantityInCart = cartItems[item.id] ?? 0;
-
     return (
       <View style={styles.bookItem}>
         <Text style={styles.bookTitle}>{item.title}</Text>
@@ -59,9 +50,7 @@ function CustomerBooksScreen() {
           {item.author} - ${item.price} - Stock: {item.stock}
         </Text>
         <View style={styles.itemAction}>
-          <Button onPress={() => addToCart(item.id)}>
-            {quantityInCart > 0 ? `Add to Cart (${quantityInCart})` : 'Add to Cart'}
-          </Button>
+          <Button onPress={() => handleAddToCart(item)}>Add to Cart</Button>
         </View>
       </View>
     );
@@ -74,7 +63,6 @@ function CustomerBooksScreen() {
   return (
     <View style={styles.root}>
       <Text style={styles.heading}>Books</Text>
-      <Text style={styles.cartInfo}>Cart items: {cartCount}</Text>
 
       <View style={styles.searchRow}>
         <TextInput
@@ -118,10 +106,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: Colors.primary800,
-    marginBottom: 4,
-  },
-  cartInfo: {
-    color: Colors.primary700,
     marginBottom: 12,
   },
   searchRow: {

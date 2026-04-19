@@ -2,10 +2,10 @@ import { useCallback, useContext, useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -19,6 +19,7 @@ import {
   fetchBooks,
   updateBook,
 } from '../util/books';
+import { formatApiError } from '../util/api-error';
 
 const emptyForm = {
   title: '',
@@ -116,15 +117,28 @@ function AdminBooksScreen() {
       await deleteBook(authCtx.token, id);
       await loadBooks();
     } catch (error) {
-      Alert.alert('Delete failed', 'Book could not be deleted.');
+      Alert.alert('Delete failed', formatApiError(error));
     }
   }
 
   function confirmDelete(id) {
-    Alert.alert('Delete book?', 'This action cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => removeBook(id) },
-    ]);
+    Alert.alert(
+      'Delete book?',
+      'This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setTimeout(() => {
+              void removeBook(id);
+            }, 0);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   }
 
   function runSearch() {
@@ -140,12 +154,16 @@ function AdminBooksScreen() {
           {item.author} - ${item.price} - Stock: {item.stock}
         </Text>
         <View style={styles.itemActions}>
-          <Pressable onPress={() => startEdit(item)}>
+          <TouchableOpacity onPress={() => startEdit(item)} hitSlop={12}>
             <Text style={styles.actionText}>Edit</Text>
-          </Pressable>
-          <Pressable onPress={() => confirmDelete(item.id)}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => confirmDelete(item.id)}
+            hitSlop={12}
+            activeOpacity={0.7}
+          >
             <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -206,8 +224,10 @@ function AdminBooksScreen() {
       </View>
 
       <FlatList
+        style={styles.list}
+        keyboardShouldPersistTaps="handled"
         data={books}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderBookItem}
         ListEmptyComponent={<Text style={styles.emptyText}>No books found.</Text>}
       />
@@ -304,5 +324,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
     color: Colors.primary700,
+  },
+  list: {
+    flex: 1,
   },
 });
