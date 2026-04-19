@@ -1,0 +1,123 @@
+import { useContext, useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppLoading from 'expo-app-loading';
+
+import LoginScreen from './screens/LoginScreen';
+import SignupScreen from './screens/SignupScreen';
+import WelcomeScreen from './screens/WelcomeScreen';
+import AdminBooksScreen from './screens/AdminBooksScreen';
+import CustomerBooksScreen from './screens/CustomerBooksScreen';
+import { Colors } from './constants/styles';
+import AuthContextProvider, { AuthContext } from './store/auth-context';
+import IconButton from './components/ui/IconButton';
+
+const Stack = createNativeStackNavigator();
+
+function AuthStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: Colors.primary500 },
+        headerTintColor: 'white',
+        contentStyle: { backgroundColor: Colors.primary100 },
+      }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function AuthenticatedStack() {
+  const authCtx = useContext(AuthContext);
+
+  const defaultScreenName = authCtx.isAdmin ? 'AdminBooks' : 'CustomerBooks';
+
+  return (
+    <Stack.Navigator
+      initialRouteName={defaultScreenName}
+      screenOptions={{
+        headerStyle: { backgroundColor: Colors.primary500 },
+        headerTintColor: 'white',
+        contentStyle: { backgroundColor: Colors.primary100 },
+        headerRight: ({ tintColor }) => (
+          <IconButton
+            icon="exit"
+            color={tintColor}
+            size={24}
+            onPress={authCtx.logout}
+          />
+        ),
+      }}
+    >
+      <Stack.Screen
+        name="Welcome"
+        component={WelcomeScreen}
+        options={{ title: 'Welcome' }}
+      />
+      <Stack.Screen
+        name="AdminBooks"
+        component={AdminBooksScreen}
+        options={{ title: 'Books Admin' }}
+      />
+      <Stack.Screen
+        name="CustomerBooks"
+        component={CustomerBooksScreen}
+        options={{ title: 'Books' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+function Navigation() {
+  const authCtx = useContext(AuthContext);
+
+  return (
+    <NavigationContainer>
+      {!authCtx.isAuthenticated && <AuthStack />}
+      {authCtx.isAuthenticated && <AuthenticatedStack />}
+    </NavigationContainer>
+  );
+}
+
+function Root() {
+  const [isTryingLogin, setIsTryingLogin] = useState(true);
+
+  const authCtx = useContext(AuthContext);
+
+  useEffect(() => {
+    async function fetchAuthData() {
+      const storedToken = await AsyncStorage.getItem('token');
+      const storedUser = await AsyncStorage.getItem('user');
+
+      if (storedToken) {
+        authCtx.authenticate(storedToken, storedUser ? JSON.parse(storedUser) : null);
+      }
+
+      setIsTryingLogin(false);
+    }
+
+    fetchAuthData();
+  }, [authCtx]);
+
+  if (isTryingLogin) {
+    return <AppLoading />;
+  }
+
+  return <Navigation />;
+}
+
+export default function App() {
+  
+  return (
+    <>
+      <StatusBar style="light" />
+      <AuthContextProvider>
+        <Root />
+      </AuthContextProvider>
+    </>
+  );
+}
