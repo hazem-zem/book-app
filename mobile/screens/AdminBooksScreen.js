@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { StyleSheet,View, Text, TextInput, FlatList, Alert } from 'react-native';
+import { StyleSheet,View, Text, FlatList, Alert } from 'react-native';
 
 import { AuthContext } from '../store/auth-context';
 import { useBooks } from '../hooks/useBooks';
@@ -8,6 +8,7 @@ import { useBookForm } from '../hooks/useBookForm';
 import BookItem from '../components/books/BookItem';
 import BookForm from '../components/books/BookForm';
 import Button from '../components/ui/Button';
+import SearchBar from '../components/ui/SearchBar';
 import { Colors } from '../constants/styles';
 export default function AdminBooksScreen() {
   const { token } = useContext(AuthContext);
@@ -65,8 +66,12 @@ export default function AdminBooksScreen() {
     <View style={{ flex: 1, padding: 16 }}>
       <Text>Admin Books</Text>
 
-      <TextInput style={styles.input} value={search} onChangeText={setSearch} />
-      <Button onPress={() => setActiveSearch(search)}>Search</Button>
+      <SearchBar
+        value={search}
+        onChangeText={setSearch}
+        onSearch={() => setActiveSearch(search)}
+        placeholder="Search books..."
+      />
 
       <BookForm
         form={form}
@@ -91,14 +96,3 @@ export default function AdminBooksScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  input: {
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    backgroundColor: 'white',
-    borderRadius: 4,
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1
-  }
-});

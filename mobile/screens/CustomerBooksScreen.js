@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { View, Text, TextInput, FlatList } from 'react-native';
+import { View, Text, FlatList } from 'react-native';
 
 import { CartContext } from '../store/cart-context';
 import { useBooks } from '../hooks/useBooks';
@@ -7,6 +7,7 @@ import { useBooks } from '../hooks/useBooks';
 import CustomerBookItem from '../components/books/CustomerBookItem';
 import Button from '../components/ui/Button';
 import LoadingOverlay from '../components/ui/LoadingOverlay';
+import SearchBar from '../components/ui/SearchBar';
 
 export default function CustomerBooksScreen() {
   const { addToCart } = useContext(CartContext);
@@ -17,8 +18,6 @@ export default function CustomerBooksScreen() {
     setPage,
     lastPage,
     isLoading,
-    search,
-    setSearch,
     loadBooks,
   } = useBooks();
 
@@ -30,7 +29,7 @@ export default function CustomerBooksScreen() {
 
   function runSearch() {
     setPage(1);
-    setSearch(input.trim());
+    loadBooks(input.trim());
   }
 
   if (isLoading && !books.length) {
@@ -41,13 +40,12 @@ export default function CustomerBooksScreen() {
     <View style={{ flex: 1, padding: 16 }}>
       <Text>Books</Text>
 
-      <TextInput
+      <SearchBar
         value={input}
         onChangeText={setInput}
-        placeholder="Search"
+        onSearch={runSearch}
+        placeholder="Search books..."
       />
-
-      <Button onPress={runSearch}>Search</Button>
 
       <FlatList
         data={books}

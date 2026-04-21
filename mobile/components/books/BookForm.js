@@ -46,11 +46,17 @@ export default function BookForm({
         style={styles.input}
       />
 
-      <Button onPress={onSubmit}>
-        {isSaving ? 'Saving...' : 'Save'}
-      </Button>
+      <View style={styles.buttonContainer}>
+        <Button onPress={onSubmit} style={styles.saveButton}>
+          {isSaving ? 'Saving...' : 'Save'}
+        </Button>
 
-      {editingId && <Button onPress={onCancel}>Cancel</Button>}
+        {editingId && (
+          <Button onPress={onCancel} style={styles.cancelButton}>
+            Cancel
+          </Button>
+        )}
+      </View>
     </View>
   );
 }
@@ -73,5 +79,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginBottom: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  saveButton: {
+    flex: 1,
+    marginRight: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    marginLeft: 8,
   },
 });
