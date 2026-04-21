@@ -126,23 +126,30 @@ function Navigation() {
 
 function Root() {
   const [isTryingLogin, setIsTryingLogin] = useState(true);
-
-  const authCtx = useContext(AuthContext);
+  const { authenticate } = useContext(AuthContext);
 
   useEffect(() => {
+    let isActive = true;
+
     async function fetchAuthData() {
       const storedToken = await AsyncStorage.getItem('token');
       const storedUser = await AsyncStorage.getItem('user');
 
-      if (storedToken) {
-        authCtx.authenticate(storedToken, storedUser ? JSON.parse(storedUser) : null);
+      if (storedToken && isActive) {
+        authenticate(storedToken, storedUser ? JSON.parse(storedUser) : null);
       }
 
-      setIsTryingLogin(false);
+      if (isActive) {
+        setIsTryingLogin(false);
+      }
     }
 
     fetchAuthData();
-  }, [authCtx]);
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   if (isTryingLogin) {
     return <AppLoading />;

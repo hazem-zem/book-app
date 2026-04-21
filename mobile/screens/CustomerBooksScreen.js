@@ -1,33 +1,28 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useContext, useEffect, useState } from 'react';
+import { View, Text, TextInput, FlatList } from 'react-native';
 
+import { CartContext } from '../store/cart-context';
+import { useBooks } from '../hooks/useBooks';
+
+import CustomerBookItem from '../components/books/CustomerBookItem';
 import Button from '../components/ui/Button';
 import LoadingOverlay from '../components/ui/LoadingOverlay';
-import { Colors } from '../constants/styles';
-import { CartContext } from '../store/cart-context';
-import { fetchBooks } from '../util/books';
 
-function CustomerBooksScreen() {
+export default function CustomerBooksScreen() {
   const { addToCart } = useContext(CartContext);
-  const [books, setBooks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
 
-  const loadBooks = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const data = await fetchBooks({ search: activeSearch, page });
-      setBooks(data.data ?? []);
-      setLastPage(data.last_page ?? 1);
-    } catch (error) {
-      Alert.alert('Load failed', 'Could not fetch books.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeSearch, page]);
+  const {
+    books,
+    page,
+    setPage,
+    lastPage,
+    isLoading,
+    search,
+    setSearch,
+    loadBooks,
+  } = useBooks();
+
+  const [input, setInput] = useState('');
 
   useEffect(() => {
     loadBooks();
@@ -35,25 +30,7 @@ function CustomerBooksScreen() {
 
   function runSearch() {
     setPage(1);
-    setActiveSearch(search.trim());
-  }
-
-  function handleAddToCart(book) {
-    addToCart(book);
-  }
-
-  function renderBookItem({ item }) {
-    return (
-      <View style={styles.bookItem}>
-        <Text style={styles.bookTitle}>{item.title}</Text>
-        <Text style={styles.bookMeta}>
-          {item.author} - ${item.price} - Stock: {item.stock}
-        </Text>
-        <View style={styles.itemAction}>
-          <Button onPress={() => handleAddToCart(item)}>Add to Cart</Button>
-        </View>
-      </View>
-    );
+    setSearch(input.trim());
   }
 
   if (isLoading && !books.length) {
@@ -61,94 +38,36 @@ function CustomerBooksScreen() {
   }
 
   return (
-    <View style={styles.root}>
-      <Text style={styles.heading}>Books</Text>
+    <View style={{ flex: 1, padding: 16 }}>
+      <Text>Books</Text>
 
-      <View style={styles.searchRow}>
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search title or author"
-          style={styles.input}
-        />
-        <Button onPress={runSearch}>Search</Button>
-      </View>
+      <TextInput
+        value={input}
+        onChangeText={setInput}
+        placeholder="Search"
+      />
+
+      <Button onPress={runSearch}>Search</Button>
 
       <FlatList
         data={books}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={renderBookItem}
-        ListEmptyComponent={<Text style={styles.emptyText}>No books found.</Text>}
+        renderItem={({ item }) => (
+          <CustomerBookItem item={item} onAdd={addToCart} />
+        )}
       />
 
-      <View style={styles.pagination}>
-        <Button onPress={() => setPage((p) => Math.max(1, p - 1))}>Prev</Button>
-        <Text style={styles.pageText}>
-          Page {page} / {lastPage}
-        </Text>
-        <Button onPress={() => setPage((p) => Math.min(lastPage, p + 1))}>
-          Next
-        </Button>
-      </View>
+      <Button onPress={() => setPage((p) => Math.max(1, p - 1))}>
+        Prev
+      </Button>
+
+      <Text>
+        Page {page} / {lastPage}
+      </Text>
+
+      <Button onPress={() => setPage((p) => Math.min(lastPage, p + 1))}>
+        Next
+      </Button>
     </View>
   );
 }
-
-export default CustomerBooksScreen;
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: Colors.primary100,
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.primary800,
-    marginBottom: 12,
-  },
-  searchRow: {
-    gap: 8,
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: 'white',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 8,
-  },
-  bookItem: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 8,
-  },
-  bookTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.primary800,
-  },
-  bookMeta: {
-    marginTop: 4,
-    color: Colors.primary700,
-  },
-  itemAction: {
-    marginTop: 10,
-  },
-  pagination: {
-    marginTop: 12,
-    gap: 8,
-  },
-  pageText: {
-    textAlign: 'center',
-    color: Colors.primary800,
-    fontWeight: 'bold',
-  },
-  emptyText: {
-    marginTop: 20,
-    textAlign: 'center',
-    color: Colors.primary700,
-  },
-});
